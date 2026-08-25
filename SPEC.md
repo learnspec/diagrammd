@@ -1,7 +1,7 @@
 # DiagramMD — Format Specification v0.2
 
 > Part of the **LearnSpec** suite  
-> Status: Draft — May 12, 2026
+> Status: Draft — August 25, 2026
 
 ---
 
@@ -295,6 +295,35 @@ sequenceDiagram
 
 `id` is required on every block in a `.diagram.md` file — a block without `id` is unreferenceable and produces a validation error.
 
+### Companion `anim` Blocks
+
+A catalogue entry MAY be followed by a sibling fenced block whose `for:` attribute names the entry it animates, attaching an [AnimMD](https://github.com/learnspec/animmd) step-reveal script to the diagram. The embedding is defined normatively in the AnimMD specification (§Embedding in Host Formats); the DiagramMD side is summarised here:
+
+````markdown
+```mermaid id:calcination caption:"The calcination of metals"
+flowchart LR
+  A["Pure metal"] --> B["Calx"]
+```
+
+```anim for:calcination
+---
+bind:
+  metal: {node: A}
+  calx:  {node: B}
+---
+
+## The pure metal
+show: metal
+
+It starts from a workshop fact.
+```
+````
+
+- `anim` is **not** a diagram type: the block never renders standalone, never appears in a diagram gallery, and does not count toward the file's diagrams.
+- One `anim` block per entry; later duplicates for the same `for:` are ignored.
+- Parsers MUST preserve, never destroy, an `anim` block whose `for:` matches no entry — an author may paste the script before its diagram, and a read-modify-write of the catalogue must not silently lose it. Removing the entry removes its companion.
+- The script addresses the entry's *source* ids through its `bind:` layer; a script that fails to parse degrades to the static diagram (AnimMD §Graceful Degradation).
+
 ---
 
 ## Referencing a DiagramMD from Another Format
@@ -396,6 +425,9 @@ No rendering is performed, but the reference is clearly visible.
 | `alt` absent | Warning |
 | Empty diagram source (non-reference block) | Error |
 | `cursor` or `colors` on an `abc` block without `play` | Warning |
+| `anim` block whose `for:` matches no entry (preserved as orphan) | Warning |
+| Second `anim` block for an entry that already has one (first wins) | Warning |
+| Companion `anim` script failing AnimMD grammar validation | Warning |
 
 ### Strict Mode (`--strict`)
 
